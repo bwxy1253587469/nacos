@@ -250,6 +250,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
         }
 
+        // 使用地址服务器
         if (isUseAddressServer()) {
             try {
                 HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);

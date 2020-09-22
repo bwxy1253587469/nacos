@@ -67,9 +67,13 @@ public class DumpService {
     @PostConstruct
     public void init() {
         LogUtil.defaultLog.warn("DumpService start");
+        // 将配置信息 灰度信息 加载到内存
         DumpProcessor processor = new DumpProcessor(this);
+        // 全量dump
         DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
+        // 全量灰度
         DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
+        // 全量tag
         DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
 
         dumpTaskMgr = new TaskManager(
@@ -100,6 +104,7 @@ public class DumpService {
                 log.warn("clearConfigHistory start");
                 if (ServerListService.isFirstIp()) {
                     try {
+                        // 默认删除30天前的数据
                         Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                         int totalCount = persistService.findConfigHistoryCountByTime(startTime);
                         if (totalCount > 0) {
@@ -168,11 +173,13 @@ public class DumpService {
                 }
             };
 
+            // 10s 一次
             TimerTaskService.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
 
             long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
             LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
 
+            // 360分钟一次全量dump
             TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
                 TimeUnit.MINUTES);
 
@@ -180,6 +187,7 @@ public class DumpService {
                 TimeUnit.MINUTES);
         }
 
+        // 10分钟一次删除配置历史
         TimerTaskService.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
 
     }

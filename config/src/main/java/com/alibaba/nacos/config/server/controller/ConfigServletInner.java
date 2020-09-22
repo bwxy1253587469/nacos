@@ -111,21 +111,27 @@ public class ConfigServletInner {
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
                               String tenant, String tag, String clientIp) throws IOException, ServletException {
+        // 配置名称 分组 命名空间
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
         String requestIpApp = RequestUtil.getAppName(request);
+        // 获取读锁 零表示没有数据，失败。正数表示成功，负数表示有写锁导致加锁失败。
         int lockResult = tryConfigReadLock(request, response, groupKey);
 
         final String requestIp = RequestUtil.getRemoteIp(request);
+        // 是否灰度发布
         boolean isBeta = false;
         if (lockResult > 0) {
             FileInputStream fis = null;
             try {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
+                // 查看缓存是否存在 基本都是存在的 服务启动的时候就会将配置信息写入内存
                 CacheItem cacheItem = ConfigService.getContentCache(groupKey);
                 if (cacheItem != null) {
+                    // 缓存的配置信息是否支持灰度
                     if (cacheItem.isBeta()) {
+                        // 该灰度是否支持这个请求IP
                         if (cacheItem.getIps4Beta().contains(clientIp)) {
                             isBeta = true;
                         }
@@ -134,17 +140,22 @@ public class ConfigServletInner {
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
+                // 是否灰度发布
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
+                    // 是否使用单机模式 是否 单机模式使用db
                     if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                        // 从数据库查询配置
                         configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
                     response.setHeader("isBeta", "true");
                 } else {
+                    // 查询条件tag是否为空
                     if (StringUtils.isBlank(tag)) {
+                        // 判断是否满足tag查询条件
                         if (isUseTag(cacheItem, autoTag)) {
                             if (cacheItem != null) {
                                 if (cacheItem.tagMd5 != null) {
@@ -234,12 +245,15 @@ public class ConfigServletInner {
                     response.setDateHeader("Last-Modified", file.lastModified());
                 }
 
+                // 这个地方才是输出数据content 缓存只缓存了ID content还是从文件/数据库取
                 if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                     out = response.getWriter();
                     out.print(configInfoBase.getContent());
                     out.flush();
                     out.close();
                 } else {
+
+                    // 从文件读取
                     fis.getChannel().transferTo(0L, fis.getChannel().size(),
                         Channels.newChannel(response.getOutputStream()));
                 }
@@ -325,6 +339,12 @@ public class ConfigServletInner {
         return lockResult;
     }
 
+    /**
+     * 判断缓存的配置是否包含该tag信息 md5
+     * @param cacheItem
+     * @param tag
+     * @return
+     */
     private static boolean isUseTag(CacheItem cacheItem, String tag) {
         if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
             return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);

@@ -143,9 +143,11 @@ public class ConfigController {
         final Timestamp time = TimeUtils.getCurrentTime();
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+        // 更新或新增配置信息
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+                // 通知客户端配置更新
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
                 persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
@@ -180,6 +182,9 @@ public class ConfigController {
         ParamUtils.checkParam(tag);
 
         final String clientIp = RequestUtil.getRemoteIp(request);
+        // dataId 配置文件名称
+        // group 分组
+        // tenant 租户 也就是命名空间
         inner.doGetConfig(request, response, dataId, group, tenant, tag, clientIp);
     }
 

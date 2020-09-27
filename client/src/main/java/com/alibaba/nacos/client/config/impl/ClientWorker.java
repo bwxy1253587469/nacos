@@ -458,6 +458,7 @@ public class ClientWorker {
             }
         });
 
+        // 前一个任务执行完成后 延迟多久执行
         executor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -472,9 +473,11 @@ public class ClientWorker {
 
     private void init(Properties properties) {
 
+        // HTTP请求超时时间
         timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
             Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
+        // 重试
         taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
         enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
@@ -509,8 +512,10 @@ public class ClientWorker {
                 }
 
                 // check server config
+                // 获取有哪些配置修改了
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
 
+                // 重新拉去配置
                 for (String groupKey : changedGroupKeys) {
                     String[] key = GroupKey.parseKey(groupKey);
                     String dataId = key[0];
@@ -533,6 +538,7 @@ public class ClientWorker {
                         LOGGER.error(message, ioe);
                     }
                 }
+                // 通知监听器
                 for (CacheData cacheData : cacheDatas) {
                     if (!cacheData.isInitializing() || inInitializingCacheList
                         .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
@@ -542,6 +548,7 @@ public class ClientWorker {
                 }
                 inInitializingCacheList.clear();
 
+                // 继续保持长轮训
                 executorService.execute(this);
 
             } catch (Throwable e) {

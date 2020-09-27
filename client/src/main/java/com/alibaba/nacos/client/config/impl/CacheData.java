@@ -187,6 +187,7 @@ public class CacheData {
                     cr.setContent(content);
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
+                    // 通知监听器
                     listener.receiveConfigInfo(contentTmp);
                     listenerWrap.lastCallMd5 = md5;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,

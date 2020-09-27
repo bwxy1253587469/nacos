@@ -97,6 +97,7 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
+        // 注册IP
         serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
     }

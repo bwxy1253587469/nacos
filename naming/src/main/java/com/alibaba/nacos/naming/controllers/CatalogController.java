@@ -142,6 +142,7 @@ public class CatalogController {
     @RequestMapping(value = "/services", method = RequestMethod.GET)
     public Object listDetail(HttpServletRequest request) {
 
+        // 是否有查询条件
         boolean withInstances = Boolean.parseBoolean(WebUtils.optional(request, "withInstances", "true"));
 
         if (withInstances) {

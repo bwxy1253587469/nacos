@@ -31,9 +31,11 @@ import org.springframework.stereotype.Service;
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
+    // 持久的一致性service raft协议
     @Autowired
     private PersistentConsistencyService persistentConsistencyService;
 
+    // 短暂的一致性service 数据分片
     @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
 

@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.api.config;
 
-import java.lang.reflect.Constructor;
-import java.util.Properties;
-
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+
+import java.lang.reflect.Constructor;
+import java.util.Properties;
 
 /**
  * Config Factory
@@ -37,6 +37,7 @@ public class ConfigFactory {
      */
     public static ConfigService createConfigService(Properties properties) throws NacosException {
         try {
+            // 这种写法 和 new NacosConfigService 就不用依赖包了
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);

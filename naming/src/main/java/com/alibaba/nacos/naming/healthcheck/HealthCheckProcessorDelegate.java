@@ -47,12 +47,15 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
     @Override
     public void process(HealthCheckTask task) {
 
+        // 默认为 unknown
         String type = task.getCluster().getHealthChecker().getType();
         HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
         if(processor == null){
             processor = healthCheckProcessorMap.get("none");
         }
 
+        // 默认是 com.alibaba.nacos.naming.healthcheck.TcpSuperSenseProcessor.process
+        // 由com.alibaba.nacos.api.naming.pojo.Cluster.healthChecker#41控制
         processor.process(task);
     }
 

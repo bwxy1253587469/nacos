@@ -116,6 +116,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
         });
 
+        // 线程池执行通知任务
         executor.submit(notifier);
     }
 
@@ -164,6 +165,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     public void onPut(String key, Record value) {
 
+        // 缓存短暂的instance
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
             Datum<Instances> datum = new Datum<>();
             datum.value = (Instances) value;
@@ -176,6 +178,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
 
+        // 通知应用变更
         notifier.addTask(key, ApplyAction.CHANGE);
     }
 

@@ -170,6 +170,7 @@ public class CatalogController {
 
             return serviceDetailInfoList;
         } else {
+            // 没有查询条件
             return serviceList(request);
         }
     }
@@ -262,6 +263,8 @@ public class CatalogController {
         String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
         boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
 
+        // 这个就是服务列表 作为参数传到函数 里面修改对象的值
+        // 实际获取调用com.alibaba.nacos.naming.core.ServiceManager.chooseServiceMap
         List<Service> services = new ArrayList<>();
         int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services, hasIpCount);
 

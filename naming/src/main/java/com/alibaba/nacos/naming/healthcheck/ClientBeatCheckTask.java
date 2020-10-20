@@ -71,10 +71,12 @@ public class ClientBeatCheckTask implements Runnable {
                 return;
             }
 
+            // 一个微服务多个实例
             List<Instance> instances = service.allIPs(true);
 
             // first set health status of instances:
             for (Instance instance : instances) {
+                // 超过最长事件没有进行 心跳检查 则自动设置为不健康状态
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getInstanceHeartBeatTimeOut()) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
@@ -82,6 +84,7 @@ public class ClientBeatCheckTask implements Runnable {
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
                                 UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
+                            // TODO: 2020/10/16 发布服务信息变更事件 通过udp通知？？？
                             getPushService().serviceChanged(service);
                             SpringContext.getAppContext().publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }

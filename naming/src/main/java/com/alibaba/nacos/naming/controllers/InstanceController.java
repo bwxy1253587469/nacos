@@ -94,10 +94,13 @@ public class InstanceController {
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
 
+        // 服务名
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        // 命名空间 默认public
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
-        // 注册IP
+        // 注册IP 关键属性 ephemeral 是否短暂实例 默认是的
+        // 注册上来的微服务 IP
         serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
     }
@@ -327,6 +330,7 @@ public class InstanceController {
 
     private Instance getIPAddress(HttpServletRequest request) {
 
+        // 关键参数 ephemeral 默认为true
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String weight = WebUtils.optional(request, "weight", "1");

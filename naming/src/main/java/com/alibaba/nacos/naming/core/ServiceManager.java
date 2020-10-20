@@ -461,8 +461,10 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
+        // 将service信息添加到com.alibaba.nacos.naming.core.ServiceManager#serviceMap
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
+        // 从serviceMap获取service
         Service service = getService(namespaceId, serviceName);
 
         if (service == null) {
@@ -470,6 +472,7 @@ public class ServiceManager implements RecordListener<Service> {
                 "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
+        // 添加IP等信息
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
@@ -495,11 +498,13 @@ public class ServiceManager implements RecordListener<Service> {
 
         Service service = getService(namespaceId, serviceName);
 
+        // 添加注册的IP到内存中 返回
         List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
 
         Instances instances = new Instances();
         instances.setInstanceList(instanceList);
 
+        // 委托对象 通过ephemeral 字段判断使用raft 还是distro
         consistencyService.put(key, instances);
     }
 
@@ -545,8 +550,12 @@ public class ServiceManager implements RecordListener<Service> {
 
     public List<Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
+        // 一致性协议service
+        // com.alibaba.nacos.naming.consistency.DelegateConsistencyServiceImpl 这个对象 委托对象
+        // raft协议 分区算法
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
+        // 旧的实例列表
         Map<String, Instance> oldInstanceMap = new HashMap<>(16);
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
@@ -562,6 +571,7 @@ public class ServiceManager implements RecordListener<Service> {
         HashMap<String, Instance> instanceMap = new HashMap<>(oldInstanceMap.size());
         instanceMap.putAll(oldInstanceMap);
 
+        // 微服务新注册的IP 添加集群信息
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
                 Cluster cluster = new Cluster(instance.getClusterName(), service);
@@ -632,7 +642,9 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     private void putServiceAndInit(Service service) throws NacosException {
+        // 将service放进内存
         putService(service);
+        // 心跳检测任务
         service.init();
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
@@ -686,6 +698,7 @@ public class ServiceManager implements RecordListener<Service> {
         if (StringUtils.isNotBlank(keyword)) {
             matchList = searchServices(namespaceId, ".*" + keyword + ".*");
         } else {
+            // 获取服务列表
             matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
         }
 

@@ -85,9 +85,13 @@ public class NacosNamingService implements NamingService {
     }
 
     private void init(Properties properties) {
+        // 获取namespace
         namespace = InitUtils.initNamespaceForNaming(properties);
+        // nacos地址
         initServerAddr(properties);
+        // 初始化请求地址 /v1/ns/instance
         InitUtils.initWebRootContext();
+        // 初始化本地文件缓存地址
         initCacheDir();
         initLogName(properties);
 
@@ -189,6 +193,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
+        // 短暂的 默认是true
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
             beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
@@ -201,9 +206,11 @@ public class NacosNamingService implements NamingService {
             long instanceInterval = instance.getInstanceHeartBeatInterval();
             beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
+            // 心跳
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
+        // 注册
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
@@ -287,8 +294,10 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
+            // 故障转移
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
+            // 直接从远程获取
             serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         List<Instance> list;

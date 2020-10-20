@@ -251,10 +251,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     }
 
+    /**
+     *  初始化健康检查任务
+     *  初始化集群信息
+     */
     public void init() {
 
+        // 线程池 健康检查 主要是修改内存中微服务实例的是否健康
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
+        // 新微服务 clusterMap应该是空的
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().setService(this);
             entry.getValue().init();

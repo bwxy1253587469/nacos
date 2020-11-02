@@ -33,8 +33,10 @@ public class RaftPeer {
 
     public AtomicLong term = new AtomicLong(0L);
 
+    // 选举超时时间
     public volatile long leaderDueMs = RandomUtils.nextLong(0, GlobalExecutor.LEADER_TIMEOUT_MS);
 
+    // 心跳超时时间
     public volatile long heartbeatDueMs = RandomUtils.nextLong(0, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
 
     public State state = State.FOLLOWER;

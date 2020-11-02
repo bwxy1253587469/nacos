@@ -149,6 +149,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
+        // 任务调度器
         taskDispatcher.addTask(key);
     }
 
@@ -163,6 +164,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         return dataStore.get(key);
     }
 
+    // 放到内存中
     public void onPut(String key, Record value) {
 
         // 缓存短暂的instance

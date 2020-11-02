@@ -116,6 +116,7 @@ public class TaskDispatcher {
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
+                        // 健康的节点异步同步数据
                         for (Server member : dataSyncer.getServers()) {
                             if (NetUtils.localServer().equals(member.getKey())) {
                                 continue;

@@ -59,6 +59,7 @@ public class RaftStore {
 
         Datum datum;
         long start = System.currentTimeMillis();
+        // /home/appdeploy/nacos/data/naming/data/路径下的文件
         for (File cache : listCaches()) {
             if (cache.isDirectory() && cache.listFiles() != null) {
                 for (File datumFile : cache.listFiles()) {
@@ -80,6 +81,7 @@ public class RaftStore {
     }
 
     public synchronized Properties loadMeta() throws Exception {
+        // 加载任期数据
         File metaFile = new File(metaFileName);
         if (!metaFile.exists() && !metaFile.getParentFile().mkdirs() && !metaFile.createNewFile()) {
             throw new IllegalStateException("failed to create meta file: " + metaFile.getAbsolutePath());
@@ -125,11 +127,13 @@ public class RaftStore {
                 return null;
             }
 
+            // 这是什么文件
             if (KeyBuilder.matchSwitchKey(file.getName())) {
                 return JSON.parseObject(json, new TypeReference<Datum<SwitchDomain>>() {
                 });
             }
 
+            // 服务源数据文件
             if (KeyBuilder.matchServiceMetaKey(file.getName())) {
 
                 Datum<Service> serviceDatum;
@@ -157,6 +161,7 @@ public class RaftStore {
                 return serviceDatum;
             }
 
+            // 服务实例
             if (KeyBuilder.matchInstanceListKey(file.getName())) {
 
                 Datum<Instances> instancesDatum;

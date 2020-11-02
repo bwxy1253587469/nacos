@@ -211,6 +211,8 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     public RaftPeer local() {
+        // self ip:port
+        // 获取本身信息
         RaftPeer peer = peers.get(NetUtils.localServer());
         if (peer == null && SystemUtils.STANDALONE_MODE) {
             RaftPeer localPeer = new RaftPeer();

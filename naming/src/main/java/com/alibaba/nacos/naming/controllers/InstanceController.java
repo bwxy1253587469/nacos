@@ -348,6 +348,7 @@ public class InstanceController {
             enabled = BooleanUtils.toBoolean(enabledString);
         }
 
+        // 客户端那边默认值是true com.alibaba.cloud.nacos.registry.NacosServiceRegistry#getNacosInstanceFromRegistration
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
             String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 

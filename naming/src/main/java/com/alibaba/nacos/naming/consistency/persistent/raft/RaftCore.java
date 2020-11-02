@@ -120,16 +120,20 @@ public class RaftCore {
 
         Loggers.RAFT.info("initializing Raft sub-system");
 
+        // 通知器
         executor.submit(notifier);
 
         long start = System.currentTimeMillis();
 
+        // 加载本地缓存文件 服务信息和服务实例列表信息
         raftStore.loadDatums(notifier, datums);
 
+        // 获取任期
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
 
+        // 有任务的时候 睡眠1S 为啥？
         while (true) {
             if (notifier.tasks.size() <= 0) {
                 break;
@@ -141,7 +145,9 @@ public class RaftCore {
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
+        // master 选举任务
         GlobalExecutor.registerMasterElection(new MasterElection());
+        // 心跳检测任务
         GlobalExecutor.registerHeartbeat(new HeartBeat());
 
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
@@ -154,6 +160,7 @@ public class RaftCore {
 
     public void signalPublish(String key, Record value) throws Exception {
 
+        // 不是leader 则代理到leader去
         if (!isLeader()) {
             JSONObject params = new JSONObject();
             params.put("key", key);
@@ -375,9 +382,12 @@ public class RaftCore {
                 }
 
                 // reset timeout
+                // 重置选举超时时间
                 local.resetLeaderDue();
+                // 重置心跳超时时间
                 local.resetHeartbeatDue();
 
+                // 发送选票
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
@@ -393,12 +403,15 @@ public class RaftCore {
 
             peers.reset();
 
+            // 任期递增
             local.term.incrementAndGet();
             local.voteFor = local.ip;
+            // 候选者
             local.state = RaftPeer.State.CANDIDATE;
 
             Map<String, String> params = new HashMap<>(1);
             params.put("vote", JSON.toJSONString(local));
+            // 向除了自己的IP发送投票
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildURL(server, API_VOTE);
                 try {
@@ -432,6 +445,7 @@ public class RaftCore {
         }
 
         RaftPeer local = peers.get(NetUtils.localServer());
+        // 当本地任期大于选票的任期
         if (remote.term.get() <= local.term.get()) {
             String msg = "received illegitimate vote" +
                 ", voter-term:" + remote.term + ", votee-term:" + local.term;
@@ -460,6 +474,7 @@ public class RaftCore {
         public void run() {
             try {
 
+                // com.alibaba.nacos.naming.cluster.ServerListManager.init 会将peers设置为true
                 if (!peers.isReady()) {
                     return;
                 }
@@ -598,6 +613,7 @@ public class RaftCore {
                 + ", beat-to-term: " + local.term.get());
         }
 
+        // 修改自己为follower
         if (local.state != RaftPeer.State.FOLLOWER) {
 
             Loggers.RAFT.info("[RAFT] make remote as leader, remote peer: {}", JSON.toJSONString(remote));
@@ -606,10 +622,12 @@ public class RaftCore {
             local.voteFor = remote.ip;
         }
 
+        // 数据service instance
         final JSONArray beatDatums = beat.getJSONArray("datums");
         local.resetLeaderDue();
         local.resetHeartbeatDue();
 
+        // 修改本地缓存的server信息
         peers.makeLeader(remote);
 
         Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
@@ -669,6 +687,7 @@ public class RaftCore {
                         , getLeader().ip, batch.size(), processedCount, beatDatums.size(), datums.size());
 
                     // update datum entry
+                    // 请求leader获取最新数据
                     String url = buildURL(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
                     HttpClient.asyncHttpGet(url, null, null, new AsyncCompletionHandler<Integer>() {
                         @Override
@@ -716,6 +735,7 @@ public class RaftCore {
                                         continue;
                                     }
 
+                                    // 写入到本地
                                     raftStore.write(newDatum);
 
                                     datums.put(newDatum.key, newDatum);

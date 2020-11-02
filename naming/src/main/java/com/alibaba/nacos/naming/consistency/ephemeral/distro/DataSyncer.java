@@ -117,6 +117,7 @@ public class DataSyncer {
                     byte[] data = serializer.serialize(datumMap);
 
                     long timestamp = System.currentTimeMillis();
+                    // 同步数据
                     boolean success = NamingProxy.syncData(data, task.getTargetServer());
                     if (!success) {
                         SyncTask syncTask = new SyncTask();
